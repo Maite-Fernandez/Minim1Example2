@@ -13,6 +13,7 @@ public class Order {
 
     //Order products
     private List<Product> listProducts=null;
+    public Order(){}
 
     //Public constructor to initialize order
     public Order(String clientId){
@@ -51,5 +52,5 @@ public class Order {
     //Returns in string format the order
     @Override
     public String toString(){
-        return "Order [id=" + this.getId() + ", price=" + this.getPrice() + ", complete"+ this.isComplete() + ", served=" + this.isServed() + "]" ; }
+        return "Order [id=" + this.getId() + ", price=" + this.getPrice() + ", complete="+ this.isComplete() + ", served=" + this.isServed() + "]" ; }
 }

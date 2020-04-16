@@ -34,13 +34,16 @@ public interface ProductManager {
     Order addProductToOrder(Product product, Order order);
 
     //Finish an order and say that it is ready to be served
-    void myOrderIsReady(String orderId);
+    Order myOrderIsReady(String orderId);
 
     //Serve an order
-    List<Order> serveOrder();
+    Order serveOrder();
 
-    //Get number of users
+    //Get number of clients
     int getClientsNumber();
+
+    //Get list of clients
+    List<Client> getClients();
 
     //Clear resources
     void clearResources();

@@ -10,7 +10,7 @@ public class ProductManagerImpl implements ProductManager{
     private List<Order> orderList;
     private HashMap<String , Product> mapProduct;
     private HashMap<String , Client> mapClient;
-    private static Logger logger = Logger.getLogger(ProductManagerImpl.class);
+    private static Logger log = Logger.getLogger(ProductManagerImpl.class);
 
     //Private Constructor for Singleton
     private ProductManagerImpl(){
@@ -38,12 +38,13 @@ public class ProductManagerImpl implements ProductManager{
                     return p1.getPrice().compareTo(p2.getPrice());
                 }
             });
-            Logger.info("List of products by price in descending order: " + result.toString());
+            log.info("List of products by price in descending order: " + result.toString());
             return result; //200 OK PETITION
         }
         else {
+            log.warn("The list of products is empty");
             return null; //404 (Empty Table)
-            Logger.warn(" is empty");
+
         }
     }
 
@@ -60,20 +61,21 @@ public class ProductManagerImpl implements ProductManager{
             }
             Comparator c = Collections.reverseOrder(new SortbySells());
             Collections.sort(result, c);
-            Logger.info("List of products by price in descending order: " + result.toString());
+            log.info("List of products by price in descending order: " + result.toString());
             return result; //200 OK PETITION
         }
         else {
+            log.warn("The list of products is empty");
             return null; //404 (Empty Table)
-            Logger.warn(" is empty");
+
         }
     }
 
     @Override
     public String addClient(Client c) {
-        logger.info("new client " + c);
+        log.info("New client " + c);
         this.mapClient.put(c.getId(),c);
-        logger.info("new client added");
+        log.info("New client added");
         return c.getId();
 
     }
@@ -88,17 +90,25 @@ public class ProductManagerImpl implements ProductManager{
     @Override
     public Client getClient(String id){
         Client c = this.mapClient.get(id);
-        logger.info("getClient("+id+")");
-        if(c!=null) { logger.info("getClient(" + id + "): " + c); }
-        else{ logger.warn("not found " + id);}
+        log.info("Get Client("+id+")");
+        if(c!=null) { log.info("Get Client(" + id + "): " + c); }
+        else{
+            log.error("Not found " + id);
+            return null;
+        }
         return c;
     }
 
     @Override
+    public List<Client> getClients() {
+        return new LinkedList<Client>(mapClient.values());
+    }
+
+    @Override
     public void addProduct(Product p) {
-        logger.info("new product " + p);
+        log.info("Add product " + p);
         this.mapProduct.put(p.getName(),p);
-        logger.info("new product added");
+        log.info("New product added");
     }
 
     @Override
@@ -109,9 +119,9 @@ public class ProductManagerImpl implements ProductManager{
 
     @Override
     public String addOrder(Order o) {
-        logger.info("new order " + o);
+        log.info("Add order " + o);
         this.orderList.add(o);
-        logger.info("new order added");
+        log.info("New order added");
         return o.getId();
     }
 
@@ -119,7 +129,7 @@ public class ProductManagerImpl implements ProductManager{
     public Order getOrder(String id){
         int index = orderList.size();
         for(int i=0;i<orderList.size();i++){
-            if(orderList.get(i).getId()==id){
+            if(orderList.get(i).getId().equals(id)){
                 index = i;
             }
         }
@@ -133,22 +143,23 @@ public class ProductManagerImpl implements ProductManager{
 
     @Override
     public List<Order> getServedOrders(String id) {
-    //Logger.info("getServerOrders("+id+")");
+        log.info("Get Server Orders ("+id+")");
         Client c = this.mapClient.get(id);
         List<Order> result = new LinkedList<Order>();
         if(c!=null) {
             for (Order o : c.getMyOrders()) {
                 if (o.isServed()) {
-                    logger.info("served order from(" + id + "): " + o);
+                    log.info("Served order from (" + id + "): " + o);
                     result.add(o);
                 }
             }
             if (result.isEmpty()){
-                logger.info("is empty ");
+                log.info("No served orders");
             }
         }
         else{
-            logger.info("user not found ");
+            log.info("User not found ");
+            return null;
         }
         return result;
     }
@@ -163,7 +174,7 @@ public class ProductManagerImpl implements ProductManager{
             }
         }
         else {
-            logger.warn("Product or order not found ");
+            log.warn("Product or order not found ");
             return null;
         }
         return o;
@@ -172,43 +183,61 @@ public class ProductManagerImpl implements ProductManager{
 
     @Override
     public Order addProductToOrder(Product p, Order o) {
-        logger.info("Product added to order");
+        log.info("Product added to order");
         o.setOrder(p);
         return o;
     }
 
     @Override
-    public void myOrderIsReady(String id) {
-        Order order = this.getOrder(id);
-        if(order!=null){
-            order.setComplete(true);
-            this.mapClient.get(order.getClient()).setOrder(order);
-            logger.info("Order ready to be served");
+    public Order myOrderIsReady(String id) {
+        int index = orderList.size();
+        for(int i=0;i<orderList.size();i++){
+            if(orderList.get(i).getId().equals(id)){
+                index = i;
+            }
+        }
+        if(index!=orderList.size()){
+            Order order = orderList.get(index);
+            this.orderList.get(index).setComplete(true);
+            this.mapClient.get(orderList.get(index).getClient()).setOrder(order);
+            log.info("Order ready to be served" + order);
+            return order;
         }
         else{
-            logger.warn("Order not found");
+            log.warn("Order not found");
+            return null;
         }
 
     }
 
     @Override
-    public List<Order> serveOrder() {
+    public Order serveOrder() {
+        log.info("Serve Order");
         int index = this.orderList.size()-1;
-        while(index>0 && this.orderList.get(index).isComplete()){
-            index= index-1;
+        boolean found = false;
+        Order order=null;
+        Double bill = 0.0;
+        while(index>=0 && (!found)){
+            order=orderList.get(index);
+            if(order.isComplete() && (!order.isServed())){
+                found=true;
+            }
+            else{
+                index= index-1;
+            }
         }
-        if(index>=0) {
+        if(found) {
             this.orderList.get(index).setServed(true);
-            Double bill = 0.0;
-            for (Product p : this.orderList.get(index).getListProducts()) {
+            for (Product p : order.getListProducts()) {
                 bill = bill + p.getPrice();
                 p.setSold(p.getSold() + 1);
             }
             this.orderList.get(index).setPrice(bill);
-            this.mapClient.get(orderList.get(index).getClient()).getOrder(orderList.get(index).getId());
-            return orderList;
+            log.info("Order served:"+ order);
+            return orderList.get(index);
         }
-        return orderList;
+        log.warn("No orders ready to be served.");
+        return null;
 
     }
 
