@@ -213,17 +213,17 @@ public class ProductManagerImpl implements ProductManager{
     @Override
     public Order serveOrder() {
         log.info("Serve Order");
-        int index = this.orderList.size()-1;
+        int index = 0;
         boolean found = false;
         Order order=null;
         Double bill = 0.0;
-        while(index>=0 && (!found)){
+        while(index<orderList.size() && (!found)){
             order=orderList.get(index);
             if(order.isComplete() && (!order.isServed())){
                 found=true;
             }
             else{
-                index= index-1;
+                index= index+1;
             }
         }
         if(found) {

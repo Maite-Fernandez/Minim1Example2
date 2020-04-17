@@ -63,17 +63,33 @@ public class ProductManagerService {
         GenericEntity<List<Client>> entity = new GenericEntity<List<Client>>(clients) {};
         return Response.status(201).entity(entity).build()  ;
     }
+    //Add a product to an order
+    @PUT
+    @ApiOperation(value = "Add a new client", notes = "Creates a new client given a name and a surname")
+    @ApiResponses(value = {
+            @ApiResponse(code = 201, message = "Successful"),
+            @ApiResponse(code = 404, message = "Name or Surname not valid"),
+    })
+    @Path("/addClient/{name}/{surname}")
+    public Response addClient(@PathParam("name") String name,@PathParam("surname") String surname ) {
+        if(name.isEmpty()||surname.isEmpty()) return Response.status(404).build();
+        String clientId = this.manager.addClient(name,surname);
+        return Response.status(201).entity(this.manager.getClient(clientId)).build();
+    }
 
     //Orders of a user
     @GET
     @ApiOperation(value = "Get all orders of a user", notes = "Retrieves the list of orders")
     @ApiResponses(value = {
             @ApiResponse(code = 201, message = "Successful", response = Order.class, responseContainer="List"),
+            @ApiResponse(code = 404, message = "Client not found")
     })
     @Path("/orderList/{clientId}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getOrderList(@PathParam("clientId") String clientId ) {
-        List<Order> orders = this.manager.getClient(clientId).getMyOrders();
+        Client client = this.manager.getClient(clientId);
+        if(client==null) return Response.status(404).build();
+        List<Order> orders = client.getMyOrders();
         GenericEntity<List<Order>> entity = new GenericEntity<List<Order>>(orders) {};
         return Response.status(201).entity(entity).build()  ;
     }
@@ -126,6 +142,7 @@ public class ProductManagerService {
         String orderId = this.manager.addOrder(order);
         return Response.status(201).entity(this.manager.getOrder(orderId)).build();
     }
+
 
     //Add a product to an order
     @PUT
